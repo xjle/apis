@@ -7,5 +7,5 @@ app = create_app('config.cfg')
 
 
 if __name__ == '__main__':
-    print("测试")
+    print("持续测试")
     app.run()

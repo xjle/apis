@@ -97,13 +97,16 @@ def send_mail():
         mail = request.form.get("mail")
         if not mail:
             return {"code": 401, "msg": "邮箱不为空"}
-        code = Tool.get_verification(6, False)
-        send_ret = tool_send_mali(subject="验证码", recipient=mail, body="验证码为{}".format(code))
-        if send_ret:
-            cache.set(mail, code)
-            return {"code": 200, "msg": "发送成功"}
+        if not cache.get(mail):
+            code = Tool.get_verification(6, False)
+            send_ret = tool_send_mali(subject="验证码", recipient=mail, body="验证码为{}".format(code))
+            if send_ret:
+                cache.set(mail, code)
+                return {"code": 200, "msg": "发送成功"}
+            else:
+                return {"code": 403, "msg": "发送失败"}
         else:
-            return {"code": 403, "msg": "发送失败"}
+            return {"code": 403, "msg": "请不要重复请求"}
 
 
 @auto.route("/register/", methods=["POST"])

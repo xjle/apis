@@ -30,7 +30,7 @@ def index():
     advertisement = [{"img": "http://img63.ddimg.cn/upload_img/00814/2/382x140-1620893021.jpg"},
                      {"img": "http://img63.ddimg.cn/topic_img/gys_06486/2022ckx382x140.jpg"},
                      {"img": "http://img61.ddimg.cn/upload_img/00785/ts/8810-1605865600.jpg"}]
-    return {"data": data, "banner": banner, "advertisement": advertisement}
+    return {"data": data, "banner": banner, "advertisement": advertisement, "code": 200}
 
 
 @book.route("/category/", methods=["POST"])
@@ -51,7 +51,7 @@ def category():
                 obj = {"id": item.get("id"), "title": item.get("title"), "img": item.get("img"),
                        "price": item.get("price"), "author": item.get("author")}
                 data.append(obj)
-        return {"data": data}
+        return {"data": data, "code": 200}
 
 
 @book.route("/search/")
@@ -71,7 +71,7 @@ def search():
         obj = {"id": item.get("id"), "title": item.get("title"), "img": item.get("img"), "author": item.get("author"),
                "price": item.get("price")}
         data.append(obj)
-    return {"data": data}
+    return {"data": data, "code": 200}
 
 
 @book.route("/detail/<bid>")
@@ -90,6 +90,7 @@ def detail(bid):
         obj = {"id": item.get("id"), "title": item.get("title"), "img": item.get("img"), "author": item.get("author"),
                "price": item.get("price"), "publisher": item.get("publisher"), "count_per": item.get("count_per"),
                "publisher_time": item.get("publisher_time"), "publisher_nums": item.get("publisher_nums"),
-               "catalogue": item.get("catalogue"), "stock": item.get("stock")}
+               "catalogue": item.get("catalogue"), "stock": item.get("stock"), "desc": item.get("desc"),
+               "bi": item.get("d_d")}
         data.append(obj)
-    return {"data": data}
+    return {"data": data, "code": 200}

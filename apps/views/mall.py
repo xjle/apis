@@ -31,11 +31,12 @@ def car():
     if request.method == "POST":
         params = request.form
         bid = params.get("bid")
+        title = params.get("title")
         nums = params.get("nums")
         if not mail or not bid or not nums:
             return {"code": 401, "msg": "缺失参数"}
 
-        obj = {"mail": mail, "cars": [{"id": bid, "nums": nums, "success": True}]}
+        obj = {"mail": mail, "cars": [{"id": bid, "title": title, "nums": nums, "success": True}]}
         if car_db.count() == 0:
             car_db.insert_one(obj)
         else:
@@ -45,8 +46,8 @@ def car():
                     item = i.get("cars")
                     for j in item:
                         if j.get("id") == bid:
-
-                            car_db.update({"$and": [{"mail": mail}, {"cars.id": bid}]}, {"$set": {"cars.$[].nums": nums}})
+                            car_db.update({"$and": [{"mail": mail}, {"cars.id": bid}]},
+                                          {"$set": {"cars.$[].nums": int(j.get("nums")) + int(nums)}})
                         else:
                             """
                                 $addToSet用于添加到数组。要将新属性添加到现有嵌入式对象中，您需要使用$set运算符和点表示法：
@@ -62,7 +63,7 @@ def car():
         if res:
             for i in res:
                 item = i.get("cars")
-                obj = {"id": item.get("id"), "nums": item.get("nums")}
+                obj = {"id": item.get("id"), "nums": item.get("nums"), "title": item.get("title")}
                 data.append(obj)
             return {"code": 200, "data": data}
 
@@ -76,7 +77,6 @@ def order():
             获取书籍id和数量，通过书籍id去商品表查询数据
     :return:
     """
-    print(g.user)
     order_db = mongo.db.order
     dic = Tool.verify_token(request.headers.get("Token"))
     mail = dic.get("mail")

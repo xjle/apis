@@ -33,10 +33,11 @@ def car():
         bid = params.get("bid")
         title = params.get("title")
         nums = params.get("nums")
+        action = params.get("action")
         if not mail or not bid or not nums:
             return {"code": 401, "msg": "缺失参数"}
 
-        obj = {"mail": mail, "cars": [{"id": bid, "title": title, "nums": nums, "success": True}]}
+        obj = {"mail": mail, "cars": [{"id": bid, "title": title, "nums": int(nums), "success": True}]}
         if car_db.count() == 0:
             car_db.insert_one(obj)
         else:
@@ -44,16 +45,17 @@ def car():
             if result:
                 for i in result:
                     item = i.get("cars")
-                    for j in item:
-                        if j.get("id") == bid:
-                            car_db.update({"$and": [{"mail": mail}, {"cars.id": bid}]},
-                                          {"$set": {"cars.$[].nums": int(j.get("nums")) + int(nums)}})
+                    a = [data for data in item if data.get('id') == bid]  # 等同于es6的find
+                    if a:
+                        if not action:
+                            t = int(a[0].get("nums")) + int(nums)
                         else:
-                            """
-                                $addToSet用于添加到数组。要将新属性添加到现有嵌入式对象中，您需要使用$set运算符和点表示法：
-                                db.collection.update({name: 'a name'}, {$set: {'links.' + toType: to_link}})
-                            """
-                            car_db.update({"mail": mail},  {"$addToSet": {"cars": {"id": bid, "nums": nums, "success": True}}})
+                            t = int(nums)
+                        car_db.update({"$and": [{"mail": mail}, {"cars.id": bid}]}, {"$set": {"cars.$.nums": t,
+                                                                                              "cars.$.success": True}})
+                    else:
+                        car_db.update({"mail": mail}, {"$addToSet": {"cars": {"id": bid, "title": title,
+                                                                              "nums": nums, "success": True}}})
             else:
                 car_db.insert_one(obj)
         return {"code": 200, "msg": "操作成功"}
@@ -84,7 +86,8 @@ def order():
         params = request.form
         info = params.get("info")  # bid,bid
         remark = params.get("remark")
-        time = datetime.now().strftime("%Y%m%d%H%M%S")
+        t = datetime.now()
+        time = t.strftime("%Y%m%d%H%M%S")
         order_id = str(time + mail + "%04d" % random.randint(0, 9999)).replace(".", "")
         if not info or not order_id:
             return {"code": 401, "msg": "缺失参数"}
@@ -95,7 +98,7 @@ def order():
             user_cars = i.get("cars")
         result = []
         for i in user_cars:
-            if i.get("success") and i.get("success"):
+            if i.get("success"):
                 for j in info.split(","):
                     if i.get("id") == j:
                         result.append(i)
@@ -106,13 +109,16 @@ def order():
         for i in res:
             for j in result:
                 if i.get("id") == j.get("id"):
+                    car_db.update({"$and": [{"mail": mail}, {"cars.id": j.get("id")}]},
+                                  {"$set": {"cars.$.nums": 0, "cars.$.success": False}})
                     total_data.append({"id": i.get("id"), "price": i.get("price"), "nums": j.get("nums")})
         total = 0
         for i in total_data:
             total += float(i.get("price")) * int(i.get("nums"))
+        time = t.strftime("%Y-%m-%d %H:%M:%S")
         obj = {"oid": order_id, "mail": mail, "time": time, "success": True, "total": total, "remark": remark}
         order_db.insert(obj)
-        return {"code": 200, "msg": "操作成功"}
+        return {"code": 200, "msg": "操作成功", "oid": order_id}
     else:
         # {"success": True}
         res = order_db.find({"$and": [{"mail": mail}]})
